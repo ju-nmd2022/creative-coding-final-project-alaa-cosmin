@@ -4,12 +4,9 @@ let handPose;
 let video;
 let hands = [];
 let particles = [];
-//let    = 0;
 let gravityStrength = 0.1;
 let stars = [];
 let blackHoles = [];
-let fireworks = [];
-let fireworkTriggers = [];
 
 function setup() {
   let canvas = createCanvas(640, 480);
@@ -20,16 +17,6 @@ function setup() {
   video.hide();
 
   handPose = ml5.handPose(video, modelReady);
-
-  // background stars
-  // for (let i = 0; i < 200; i++) {
-  //   stars.push({
-  //     x: random(width),
-  //     y: random(height),
-  //     size: random(1, 3),
-  //     brightness: random(150, 255)
-  //   });
-  // }
 }
 
 function modelReady() {
@@ -49,14 +36,6 @@ function draw() {
   // Black holes
   createBlackHoles();
   updateBlackHoles();
-
-  // Firework triggers
-  createFireworkTriggers();
-  showFireworkTriggers();
-  updateFireworks();
-
-  // Particle collision with triggers
-  checkFireworkTriggers();
 
   // Hand hints
   drawHandHints();
@@ -164,9 +143,6 @@ function updateParticles() {
     let gravity = createVector(0, gravityStrength);
     p.applyForce(gravity);
 
-    //let windForce = createVector(wind, 0);
-    //p.applyForce(windForce);
-
     p.update();
     p.show();
 
@@ -177,9 +153,6 @@ function updateParticles() {
 }
 
 function applyRandomEnvironmentalEffects() {
-  //if (frameCount % 180 === 0) {
-  //  wind = random(-0.2, 0.2);
-  //}
   if (frameCount % 300 === 0) {
     gravityStrength = random(-0.1, 0.2);
   }
@@ -212,17 +185,6 @@ function updateBlackHoles() {
   }
 }
 
-function updateFireworks() {
-  for (let i = fireworks.length - 1; i >= 0; i--) {
-    let fw = fireworks[i];
-    fw.update();
-    fw.show();
-    if (fw.isFinished()) {
-      fireworks.splice(i, 1);
-    }
-  }
-}
-
 function gotHands(results) {
   hands = results;
 
@@ -243,35 +205,4 @@ function gotHands(results) {
     }
     return true; // Keep the hand
   });
-}
-
-function createFireworkTriggers() {
-  if (random(1) < 0.005) {
-    let x = random(width);
-    let y = random(height);
-    fireworkTriggers.push({ x: x, y: y });
-  }
-}
-
-function checkFireworkTriggers() {
-  for (let i = fireworkTriggers.length - 1; i >= 0; i--) {
-    let trigger = fireworkTriggers[i];
-    for (let j = particles.length - 1; j >= 0; j--) {
-      let p = particles[j];
-      let d = dist(trigger.x, trigger.y, p.pos.x, p.pos.y);
-      if (d < 10) { // Collision threshold
-        fireworks.push(new Firework(trigger.x, trigger.y));
-        fireworkTriggers.splice(i, 1);
-        break; // Only trigger once per particle
-      }
-    }
-  }
-}
-
-function showFireworkTriggers() {
-  noStroke();
-  fill(255, 0, 0, 150);
-  for (let trigger of fireworkTriggers) {
-    ellipse(trigger.x, trigger.y, 10);
-  }
 }
