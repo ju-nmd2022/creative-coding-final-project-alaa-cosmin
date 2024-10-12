@@ -1,11 +1,11 @@
 class BlackHole {
     constructor(x, y) {
       this.pos = createVector(x, y);
-      this.radius = random(175, 225); // Random size for variation
-      this.mass = this.radius * 2; // Mass affects gravitational pull
-      this.absorbedParticles = []; // Store absorbed particles
+      this.radius = random(175, 225);
+      this.mass = this.radius * 2;
+      this.absorbedParticles = [];
       this.vel = p5.Vector.random2D().mult(random(0.2, 0.5));
-      this.lifespan = 180; // Approx. 3-4 seconds at 60fps
+      this.lifespan = 180;
     }
   
     update() {
@@ -41,7 +41,7 @@ class BlackHole {
       for (let i = 0; i < this.absorbedParticles.length; i++) {
         let p = this.absorbedParticles[i];
         p.pos = createVector(width - this.pos.x, this.pos.y);
-        p.vel = p5.Vector.random2D().mult(random(2, 5)); // Give them random velocity
+        p.vel = p5.Vector.random2D().mult(random(2, 5)); // Random velocity
         boids.push(p); // Return the particle back to boids
       }
       this.absorbedParticles = []; // Clear the absorbed particles
