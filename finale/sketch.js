@@ -5,9 +5,10 @@ let gravityStrength = 0.1;
 let stars = [];
 let boids = [];
 let explodingStars = [];
+let blackHoles = [];
 
 function setup() {
-  let canvas = createCanvas(640, 480);
+  let canvas = createCanvas(windowWidth, windowHeight);
   canvas.parent('canvasContainer');
 
   video = createCapture(VIDEO);
@@ -35,23 +36,110 @@ function draw() {
   // Mood based on the number of hands detected
   let mood = getMood();
 
+  // Limit the number of boids (particles) on the screen
+  let maxBoids = 300; // Set a maximum number of particles
+  if (boids.length > maxBoids) {
+    boids.splice(0, boids.length - maxBoids); // Remove the oldest particles
+  }
+
   // Update and display each Boid based on the current mood
   for (let boid of boids) {
     switch (mood) {
       case 'one-hand':
-        boid.maxSpeed = 4; // Slower speed when one hand is detected
+        boid.maxSpeed = 7; // Slower speed when one hand is detected
+        applyCreativeMovement(boid); // Apply creative movement behavior
         break;
       case 'two-hands':
-        boid.maxSpeed = 6; // Faster and more creative movement for two hands
-        applyCreativeMovement(boid); // Additional creative behavior
+        boid.maxSpeed = 12; // Faster and more creative movement for two hands
+        applyCreativeMovement(boid); // Apply creative movement behavior
         break;
       default: // No hands
-        boid.maxSpeed = 2; // Normal speed when no hands are detected
+        boid.maxSpeed = 2; // Use similar speed to 'one-hand' for no-hands mood
         break;
     }
     boid.update(); // Update position
     boid.edges();
     boid.show(); // Draw as a star
+  }
+
+  // Handle black hole interactions based on mood and creative decisions
+  for (let i = blackHoles.length - 1; i >= 0; i--) {
+    let blackHole = blackHoles[i];
+    blackHole.update();
+    blackHole.show();
+
+    // Make gravity strength unique for each black hole
+    let gravityStrength = random(0.05, 0.5); // Different gravity for each black hole
+
+    // Interact with boids based on mood and creative decisions
+    for (let j = boids.length - 1; j >= 0; j--) {
+      let boid = boids[j];
+
+      // Add variation to gravity so some particles move faster towards the black hole
+      let variedGravityStrength = random(0.1, 0.5) * gravityStrength;
+
+      // Selectively apply gravity or leave particles unaffected
+      if (random(1) < 0.7) { // 70% chance to apply gravity, 30% to leave unaffected
+        blackHole.attract(boid, variedGravityStrength); // Apply creative gravitational pull
+      }
+
+      // In no-hands mood, black holes randomly absorb, spin, or leave particles unaffected
+      if (mood === 'no-hands') {
+        let blackHoleAction = random(1);
+        if (blackHoleAction < 0.33) {
+          // Absorb particle
+          blackHole.checkAbsorption(boid, j);
+        } else if (blackHoleAction < 0.66) {
+          // Spin particles for creative effect
+          boid.vel.rotate(random(-PI / 4, PI / 4));
+        }
+      } else if (mood === 'one-hand') {
+        if (random(1) < 0.6) {
+          blackHole.checkAbsorption(boid, j); // Absorb particle with 60% chance
+        } else {
+          boid.vel.mult(1.5); // Increase boid speed for more dynamic interaction
+        }
+      } else if (mood === 'two-hands') {
+        let distance = dist(blackHole.pos.x, blackHole.pos.y, boid.pos.x, boid.pos.y);
+        if (distance < blackHole.radius / 2) {
+          if (random(1) < 0.5) {
+            boid.vel.mult(0); // Stop the particle if it touches the black hole
+          } else {
+            boid.vel.rotate(random(-PI / 4, PI / 4)); // Apply random spin for creativity
+          }
+        }
+      }
+    }
+
+    // Interact with exploding stars for creative effects
+    for (let k = explodingStars.length - 1; k >= 0; k--) {
+      let star = explodingStars[k];
+      let distance = dist(blackHole.pos.x, blackHole.pos.y, star.pos.x, star.pos.y);
+
+      // Increase the chance for black holes to absorb exploding stars
+      if (distance < blackHole.radius / 2 && random(1) < 0.7) {
+        blackHole.checkAbsorption(star, k); // Higher chance to absorb exploding star
+      }
+
+      // Apply creative effects to exploding stars: increase size, reduce lifespan
+      if (distance < blackHole.radius / 2) {
+        if (random(1) < 0.5) {
+          star.size = min(star.size * 1.3, 100); // Limit maximum size of exploding stars
+          star.lifeSpan = min(star.lifeSpan, 180); // Limit duration to 180 frames
+        }
+      }
+    }
+
+    // If black hole lifespan reaches 0, regenerate particles and remove black hole
+    if (blackHole.lifespan <= 0) {
+      blackHole.regenerateParticles(); // Release absorbed particles
+      blackHoles.splice(i, 1); // Remove black hole from array
+    }
+  }
+
+  // Shortened interval for black hole creation
+  if (frameCount % 300 === 0) { // Black holes appear more frequently now
+    blackHoles.push(new BlackHole(random(width), random(height)));
   }
 
   // Handle exploding stars for all moods
@@ -109,7 +197,6 @@ function draw() {
   // Hand hints
   drawHandHints();
 }
-
 function getMood() {
   if (hands.length === 0) {
     return 'no-hands'; // No hands detected
