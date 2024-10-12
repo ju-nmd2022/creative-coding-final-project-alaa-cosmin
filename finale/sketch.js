@@ -6,10 +6,11 @@ let stars = [];
 let boids = [];
 let explodingStars = [];
 let blackHoles = [];
+let comet;
 
 function setup() {
   let canvas = createCanvas(windowWidth, windowHeight);
-  canvas.parent('canvasContainer');
+  canvas.parent("canvasContainer");
 
   video = createCapture(VIDEO);
   video.size(width, height);
@@ -21,10 +22,12 @@ function setup() {
   for (let i = 0; i < 100; i++) {
     boids.push(new Boid(random(width), random(height)));
   }
+
+  comet = new Comet();
 }
 
 function modelReady() {
-  console.log('HandPose model loaded.');
+  console.log("HandPose model loaded.");
   handPose.detectStart(video, gotHands);
 }
 
@@ -45,13 +48,12 @@ function draw() {
   // Update and display each Boid based on the current mood
   for (let boid of boids) {
     switch (mood) {
-      case 'one-hand':
-        boid.maxSpeed = 7; // Slower speed when one hand is detected
-        applyCreativeMovement(boid); // Apply creative movement behavior
+      case "one-hand":
+        boid.maxSpeed = 4; // Slower speed when one hand is detected
         break;
-      case 'two-hands':
-        boid.maxSpeed = 12; // Faster and more creative movement for two hands
-        applyCreativeMovement(boid); // Apply creative movement behavior
+      case "two-hands":
+        boid.maxSpeed = 6; // Faster and more creative movement for two hands
+        applyCreativeMovement(boid); // Additional creative behavior
         break;
       default: // No hands
         boid.maxSpeed = 2; // Use similar speed to 'one-hand' for no-hands mood
@@ -79,12 +81,13 @@ function draw() {
       let variedGravityStrength = random(0.1, 0.5) * gravityStrength;
 
       // Selectively apply gravity or leave particles unaffected
-      if (random(1) < 0.7) { // 70% chance to apply gravity, 30% to leave unaffected
+      if (random(1) < 0.7) {
+        // 70% chance to apply gravity, 30% to leave unaffected
         blackHole.attract(boid, variedGravityStrength); // Apply creative gravitational pull
       }
 
       // In no-hands mood, black holes randomly absorb, spin, or leave particles unaffected
-      if (mood === 'no-hands') {
+      if (mood === "no-hands") {
         let blackHoleAction = random(1);
         if (blackHoleAction < 0.33) {
           // Absorb particle
@@ -93,14 +96,19 @@ function draw() {
           // Spin particles for creative effect
           boid.vel.rotate(random(-PI / 4, PI / 4));
         }
-      } else if (mood === 'one-hand') {
+      } else if (mood === "one-hand") {
         if (random(1) < 0.6) {
           blackHole.checkAbsorption(boid, j); // Absorb particle with 60% chance
         } else {
           boid.vel.mult(1.5); // Increase boid speed for more dynamic interaction
         }
-      } else if (mood === 'two-hands') {
-        let distance = dist(blackHole.pos.x, blackHole.pos.y, boid.pos.x, boid.pos.y);
+      } else if (mood === "two-hands") {
+        let distance = dist(
+          blackHole.pos.x,
+          blackHole.pos.y,
+          boid.pos.x,
+          boid.pos.y
+        );
         if (distance < blackHole.radius / 2) {
           if (random(1) < 0.5) {
             boid.vel.mult(0); // Stop the particle if it touches the black hole
@@ -114,7 +122,12 @@ function draw() {
     // Interact with exploding stars for creative effects
     for (let k = explodingStars.length - 1; k >= 0; k--) {
       let star = explodingStars[k];
-      let distance = dist(blackHole.pos.x, blackHole.pos.y, star.pos.x, star.pos.y);
+      let distance = dist(
+        blackHole.pos.x,
+        blackHole.pos.y,
+        star.pos.x,
+        star.pos.y
+      );
 
       // Increase the chance for black holes to absorb exploding stars
       if (distance < blackHole.radius / 2 && random(1) < 0.7) {
@@ -138,13 +151,13 @@ function draw() {
   }
 
   // Shortened interval for black hole creation
-  if (frameCount % 300 === 0) { // Black holes appear more frequently now
+  if (frameCount % 300 === 0) {
     blackHoles.push(new BlackHole(random(width), random(height)));
   }
 
   // Handle exploding stars for all moods
   switch (mood) {
-    case 'one-hand':
+    case "one-hand":
       for (let star of explodingStars) {
         star.update();
         applyCreativeExplodingStar(star); // Creative behavior for one hand
@@ -154,9 +167,17 @@ function draw() {
       if (frameCount % 60 === 0 && explodingStars.length < 3) {
         explodingStars.push(new ExplodingStar(8, 20)); // Add a new star every 60 frames
       }
+
+      let handPos = getHandPosition(); // Get the current hand position
+      let force = p5.Vector.sub(handPos, comet.pos); // Attraction force
+      force.setMag(0.02); // Control the strength of attraction
+      comet.applyForce(force); // Apply force to comet
+
+      comet.update(); // Change the comet's color to a warmer tone
+      comet.display();
       break;
 
-    case 'two-hands':
+    case "two-hands":
       if (frameCount % 30 === 0) {
         let numberOfStars = int(random(2, 5)); // Random number of stars to create
         for (let i = 0; i < numberOfStars; i++) {
@@ -173,6 +194,26 @@ function draw() {
           explodingStars.splice(i, 1); // Remove from array
         }
       }
+
+      // Add comet behavior for two hands
+      let hand1Pos = getHandPosition(0);
+      let hand2Pos = getHandPosition(1); // Second hand
+      let closestHand =
+        comet.pos.dist(hand1Pos) < comet.pos.dist(hand2Pos)
+          ? hand1Pos
+          : hand2Pos;
+
+      let twoHandsForce = p5.Vector.sub(closestHand, comet.pos); // Attraction to the closest hand
+      twoHandsForce.setMag(0.05); // Stronger pull
+      comet.applyForce(twoHandsForce); // Apply force toward the closest hand
+
+      // Add random movement for chaotic behavior
+      let randomForce = p5.Vector.random2D().mult(0.1);
+      comet.applyForce(randomForce);
+
+      comet.update();
+      comet.display();
+
       break;
 
     default: // No hands
@@ -184,6 +225,9 @@ function draw() {
       if (frameCount % 90 === 0 && explodingStars.length < 3) {
         explodingStars.push(new ExplodingStar(8, 20)); // Add a new star every 90 frames
       }
+
+      comet.update();
+      comet.display();
       break;
   }
 
@@ -199,11 +243,11 @@ function draw() {
 }
 function getMood() {
   if (hands.length === 0) {
-    return 'no-hands'; // No hands detected
+    return "no-hands"; // No hands detected
   } else if (hands.length === 1) {
-    return 'one-hand'; // One hand detected
+    return "one-hand"; // One hand detected
   } else if (hands.length >= 2) {
-    return 'two-hands'; // Two hands detected
+    return "two-hands"; // Two hands detected
   }
 }
 
@@ -333,7 +377,7 @@ function isHandOpen(hand) {
 function gotHands(results) {
   hands = results;
 
-  hands = hands.filter(hand => {
+  hands = hands.filter((hand) => {
     let wrist = hand.keypoints[0];
     if (!wrist) return true;
     let wristX = width - wrist.x;
@@ -341,4 +385,17 @@ function gotHands(results) {
 
     return true; // Keep the hand
   });
+}
+
+function getHandPosition(index = 0) {
+  if (hands.length > index) {
+    // Get the position of the hand (use wrist position as reference)
+    let hand = hands[index]; // Get the hand by index (default is 0 for the first hand)
+    let wrist = hand.keypoints[0]; // The wrist is usually the first keypoint
+    if (wrist) {
+      return createVector(width - wrist.x, wrist.y); // Flip x-coordinate to match canvas and return hand position as a vector
+    }
+  }
+  // Return a default position if no hands are detected
+  return createVector(width / 2, height / 2);
 }
