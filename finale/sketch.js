@@ -40,7 +40,7 @@ function draw() {
   let mood = getMood();
 
   // Limit the number of boids (particles) on the screen
-  let maxBoids = 300; // Set a maximum number of particles
+  let maxBoids = 400; // Set a maximum number of particles
   if (boids.length > maxBoids) {
     boids.splice(0, boids.length - maxBoids); // Remove the oldest particles
   }
@@ -49,28 +49,29 @@ function draw() {
   for (let boid of boids) {
     switch (mood) {
       case "one-hand":
-        boid.maxSpeed = 4; // Slower speed when one hand is detected
+        boid.maxSpeed = 7;
+        applyCreativeMovement(boid); // Apply creative movement behavior
         break;
       case "two-hands":
-        boid.maxSpeed = 6; // Faster and more creative movement for two hands
-        applyCreativeMovement(boid); // Additional creative behavior
+        boid.maxSpeed = 12;
+        applyCreativeMovement(boid); // Apply creative movement behavior
         break;
       default: // No hands
-        boid.maxSpeed = 2; // Use similar speed to 'one-hand' for no-hands mood
+        boid.maxSpeed = 2;
         break;
     }
-    boid.update(); // Update position
+    boid.update();
     boid.edges();
-    boid.show(); // Draw as a star
+    boid.show();
   }
 
-  // Handle black hole interactions based on mood and creative decisions
+  // Handle black hole interactions based on mood
   for (let i = blackHoles.length - 1; i >= 0; i--) {
     let blackHole = blackHoles[i];
     blackHole.update();
     blackHole.show();
 
-    // Make gravity strength unique for each black hole
+    // Unique gravity strength for each black hole
     let gravityStrength = random(0.05, 0.5); // Different gravity for each black hole
 
     // Interact with boids based on mood and creative decisions
@@ -80,10 +81,19 @@ function draw() {
       // Add variation to gravity so some particles move faster towards the black hole
       let variedGravityStrength = random(0.1, 0.5) * gravityStrength;
 
-      // Selectively apply gravity or leave particles unaffected
-      if (random(1) < 0.7) {
-        // 70% chance to apply gravity, 30% to leave unaffected
-        blackHole.attract(boid, variedGravityStrength); // Apply creative gravitational pull
+      // In "no-hands" mood, attract only nearby particles
+      if (mood === "no-hands") {
+        let distance = dist(
+          blackHole.pos.x,
+          blackHole.pos.y,
+          boid.pos.x,
+          boid.pos.y
+        );
+        if (distance < blackHole.radius) {
+          blackHole.attract(boid, variedGravityStrength);
+        }
+      } else {
+        blackHole.attract(boid, variedGravityStrength); // Attract all particles in other moods
       }
 
       // In no-hands mood, black holes randomly absorb, spin, or leave particles unaffected
@@ -113,13 +123,13 @@ function draw() {
           if (random(1) < 0.5) {
             boid.vel.mult(0); // Stop the particle if it touches the black hole
           } else {
-            boid.vel.rotate(random(-PI / 4, PI / 4)); // Apply random spin for creativity
+            boid.vel.rotate(random(-PI / 4, PI / 4)); // Apply random spin
           }
         }
       }
     }
 
-    // Interact with exploding stars for creative effects
+    // Interact with exploding stars
     for (let k = explodingStars.length - 1; k >= 0; k--) {
       let star = explodingStars[k];
       let distance = dist(
@@ -138,20 +148,37 @@ function draw() {
       if (distance < blackHole.radius / 2) {
         if (random(1) < 0.5) {
           star.size = min(star.size * 1.3, 100); // Limit maximum size of exploding stars
-          star.lifeSpan = min(star.lifeSpan, 180); // Limit duration to 180 frames
+          star.lifeSpan = min(star.lifeSpan, 180); // Limit duration
         }
       }
     }
 
-    // If black hole lifespan reaches 0, regenerate particles and remove black hole
+    // If black hole lifespan reaches 0, apply creative regrouping and remove black hole
     if (blackHole.lifespan <= 0) {
       blackHole.regenerateParticles(); // Release absorbed particles
-      blackHoles.splice(i, 1); // Remove black hole from array
+
+      // Particles regroup after black hole disappears
+      if (random(1) < 0.5) {
+        // Group particles shape
+        groupParticlesInShape("circle");
+      } else {
+        // Group particles shape
+        groupParticlesInShape("triangle");
+      }
+
+      // Large exploding star that covers the whole canvas
+      let largeExplodingStar = new ExplodingStar(width / 2, height / 2);
+      largeExplodingStar.size = max(width, height) * 1.5;
+      largeExplodingStar.lifeSpan = 10;
+
+      explodingStars.push(largeExplodingStar);
+
+      blackHoles.splice(i, 1);
     }
   }
 
   // Shortened interval for black hole creation
-  if (frameCount % 300 === 0) {
+  if (frameCount % 250 === 0) {
     blackHoles.push(new BlackHole(random(width), random(height)));
   }
 
@@ -160,12 +187,12 @@ function draw() {
     case "one-hand":
       for (let star of explodingStars) {
         star.update();
-        applyCreativeExplodingStar(star); // Creative behavior for one hand
+        applyCreativeExplodingStar(star);
         star.show();
       }
 
       if (frameCount % 60 === 0 && explodingStars.length < 3) {
-        explodingStars.push(new ExplodingStar(8, 20)); // Add a new star every 60 frames
+        explodingStars.push(new ExplodingStar(8, 20)); // New star every 60 frames
       }
 
       let handPos = getHandPosition(); // Get the current hand position
@@ -181,7 +208,7 @@ function draw() {
       if (frameCount % 30 === 0) {
         let numberOfStars = int(random(2, 5)); // Random number of stars to create
         for (let i = 0; i < numberOfStars; i++) {
-          explodingStars.push(new ExplodingStar(8, 20)); // Add new stars to the array
+          explodingStars.push(new ExplodingStar(8, 20));
         }
       }
 
@@ -191,7 +218,7 @@ function draw() {
         star.show();
 
         if (star.toRemove) {
-          explodingStars.splice(i, 1); // Remove from array
+          explodingStars.splice(i, 1);
         }
       }
 
@@ -223,7 +250,7 @@ function draw() {
       }
 
       if (frameCount % 90 === 0 && explodingStars.length < 3) {
-        explodingStars.push(new ExplodingStar(8, 20)); // Add a new star every 90 frames
+        explodingStars.push(new ExplodingStar(8, 20));
       }
 
       comet.update();
@@ -234,13 +261,14 @@ function draw() {
   // Remove exploded stars
   for (let i = explodingStars.length - 1; i >= 0; i--) {
     if (explodingStars[i].toRemove) {
-      explodingStars.splice(i, 1); // Remove from array
+      explodingStars.splice(i, 1);
     }
   }
 
   // Hand hints
   drawHandHints();
 }
+
 function getMood() {
   if (hands.length === 0) {
     return "no-hands"; // No hands detected
@@ -324,6 +352,33 @@ function applyCreativeExplodingStar(explodingStar) {
   }
 }
 
+// Function to group particles into creative shapes at a random location on the canvas
+function groupParticlesInShape(shape) {
+  let centerX = random(width);
+  let centerY = random(height);
+  let angleStep = TWO_PI / boids.length; // Step size for angular placement
+
+  if (shape === "circle") {
+    for (let i = 0; i < boids.length; i++) {
+      let angle = i * angleStep;
+      let radius = random(50, 150);
+      boids[i].pos.x = centerX + cos(angle) * radius;
+      boids[i].pos.y = centerY + sin(angle) * radius;
+    }
+  } else if (shape === "triangle") {
+    for (let i = 0; i < boids.length; i++) {
+      let side = i % 3;
+      if (side === 0) {
+        boids[i].pos.set(centerX - 100, centerY - 100);
+      } else if (side === 1) {
+        boids[i].pos.set(centerX + 100, centerY - 100);
+      } else {
+        boids[i].pos.set(centerX, centerY + 100);
+      }
+    }
+  }
+}
+
 function drawStar(x, y, radius1, radius2, npoints) {
   let angle = TWO_PI / npoints;
   let halfAngle = angle / 2.0;
@@ -383,7 +438,7 @@ function gotHands(results) {
     let wristX = width - wrist.x;
     let wristY = wrist.y;
 
-    return true; // Keep the hand
+    return true;
   });
 }
 
