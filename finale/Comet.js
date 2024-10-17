@@ -61,7 +61,7 @@ class Comet {
 
   display() {
     noStroke();
-    fill(103, 235, 211); // Fully opaque comet head
+    fill(103, 235, 211);
     ellipse(this.pos.x, this.pos.y, 25, 25); // Comet head
 
     // Draw the tail using the history array
@@ -72,7 +72,7 @@ class Comet {
         random(200, 235),
         random(190, 211),
         map(i, 0, this.history.length, 0, 150)
-      ); // Higher opacity for tail
+      );
       ellipse(pos.x, pos.y, map(i, 0, this.history.length, 5, 20)); // Tail gets thinner
     }
   }
