@@ -11,7 +11,7 @@ class Boid {
     this.acc.add(force);
   }
 
-  // Update the position of the Boid
+
   update() {
     this.vel.add(this.acc);
     this.vel.limit(this.maxSpeed);
@@ -29,6 +29,6 @@ class Boid {
   show() {
     noStroke();
     fill(255, 255, 255, 200);
-    ellipse(this.pos.x, this.pos.y, 3);
+    ellipse(this.pos.x, this.pos.y, 4);
   }
 }

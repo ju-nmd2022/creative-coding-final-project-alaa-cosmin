@@ -14,7 +14,6 @@ class ExplodingStar {
     // Move the star before it explodes
     this.pos.add(this.vel);
 
-    // Explode when the life span reaches zero
     if (this.lifeSpan <= 0 && !this.exploded) {
       this.explode();
     }
@@ -24,7 +23,6 @@ class ExplodingStar {
     if (!this.exploded) {
       this.drawStarOnFire();
     } else {
-      // Draw the explosion flames
       this.drawExplosionFlames();
     }
   }
@@ -43,7 +41,7 @@ class ExplodingStar {
     ellipse(this.pos.x, this.pos.y, explosionSize);
   }
 
-  // Trigger the explosion
+
   explode() {
     this.exploded = true;
     setTimeout(() => {

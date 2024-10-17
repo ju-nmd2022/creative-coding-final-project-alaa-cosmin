@@ -1,11 +1,11 @@
 class BlackHole {
     constructor(x, y) {
       this.pos = createVector(x, y);
-      this.radius = random(175, 225); // Random size for variation
-      this.mass = this.radius * 2; // Mass affects gravitational pull
-      this.absorbedParticles = []; // Store absorbed particles for possible ejection
+      this.radius = random(175, 225);
+      this.mass = this.radius * 2;
+      this.absorbedParticles = [];
       this.vel = p5.Vector.random2D().mult(random(0.2, 0.5));
-      this.lifespan = random(300, 600); // Lifespan in frames (approx. 5-10 seconds at 60fps)
+      this.lifespan = 180;
     }
   
     update() {
@@ -19,7 +19,7 @@ class BlackHole {
       let blackHoleX = width - this.pos.x;
       let force = createVector(blackHoleX - particle.pos.x, this.pos.y - particle.pos.y);
       let distance = force.mag();
-      let minDistance = 5;
+      let minDistance = 2;
       distance = constrain(distance, minDistance, this.radius);
       force.normalize();
   
@@ -33,20 +33,18 @@ class BlackHole {
       let distance = dist(blackHoleX, this.pos.y, particle.pos.x, particle.pos.y);
       if (distance < this.radius / 2) {
         this.absorbedParticles.push(particle);
-        particles.splice(index, 1);
+        boids.splice(index, 1); // Remove the particle from boids
       }
     }
   
-    possiblyEjectParticles() {
-      if (random(1) < 0.001 && this.absorbedParticles.length > 0) {
-        for (let i = 0; i < this.absorbedParticles.length; i++) {
-          let p = this.absorbedParticles[i];
-          p.pos = createVector(width - this.pos.x, this.pos.y);
-          p.vel = p5.Vector.random2D().mult(random(2, 5));
-          particles.push(p);
-        }
-        this.absorbedParticles = [];
+    regenerateParticles() {
+      for (let i = 0; i < this.absorbedParticles.length; i++) {
+        let p = this.absorbedParticles[i];
+        p.pos = createVector(width - this.pos.x, this.pos.y);
+        p.vel = p5.Vector.random2D().mult(random(2, 5)); // Random velocity
+        boids.push(p); // Return the particle back to boids
       }
+      this.absorbedParticles = []; // Clear the absorbed particles
     }
   
     show() {
