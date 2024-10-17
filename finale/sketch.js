@@ -18,7 +18,7 @@ function setup() {
 
   handPose = ml5.handPose(video, modelReady);
 
-  // Create a flock of boids (stars)
+  // Create boids (stars)
   for (let i = 0; i < 100; i++) {
     boids.push(new Boid(random(width), random(height)));
   }
@@ -32,17 +32,15 @@ function modelReady() {
 }
 
 function draw() {
-  // Night sky background
   background(10, 10, 30);
   noStroke();
 
-  // Mood based on the number of hands detected
+  //Setting the mood of the system based on the number of hands detected.
   let mood = getMood();
-
-  // Limit the number of boids (particles) on the screen
-  let maxBoids = 400; // Set a maximum number of particles
+  // Limit the number of boids on the canvas
+  let maxBoids = 400;
   if (boids.length > maxBoids) {
-    boids.splice(0, boids.length - maxBoids); // Remove the oldest particles
+    boids.splice(0, boids.length - maxBoids);
   }
 
   // Update and display each Boid based on the current mood
@@ -71,8 +69,8 @@ function draw() {
     blackHole.update();
     blackHole.show();
 
-    // Unique gravity strength for each black hole
-    let gravityStrength = random(0.05, 0.5); // Different gravity for each black hole
+    // Random gravity strength for the black holes
+    let gravityStrength = random(0.05, 0.5);
 
     // Interact with boids based on mood and creative decisions
     for (let j = boids.length - 1; j >= 0; j--) {
@@ -144,20 +142,20 @@ function draw() {
         blackHole.checkAbsorption(star, k); // Higher chance to absorb exploding star
       }
 
-      // Apply creative effects to exploding stars: increase size, reduce lifespan
+      // Add effects to the exploding stars: increased size, reduced lifespan
       if (distance < blackHole.radius / 2) {
         if (random(1) < 0.5) {
-          star.size = min(star.size * 1.3, 100); // Limit maximum size of exploding stars
-          star.lifeSpan = min(star.lifeSpan, 180); // Limit duration
+          star.size = min(star.size * 1.3, 100); // Limit maximum size  and lifespan of exploding stars
+          star.lifeSpan = min(star.lifeSpan, 180);
         }
       }
     }
 
-    // If black hole lifespan reaches 0, apply creative regrouping and remove black hole
+    // If black hole lifespan reaches 0,  regroup the stars and remove black hole
     if (blackHole.lifespan <= 0) {
-      blackHole.regenerateParticles(); // Release absorbed particles
+      blackHole.regenerateParticles(); // Release particles
 
-      // Particles regroup after black hole disappears
+      // Particles regroup after black hole disappears in different shapes
       if (random(1) < 0.5) {
         // Group particles shape
         groupParticlesInShape("circle");
@@ -166,7 +164,7 @@ function draw() {
         groupParticlesInShape("triangle");
       }
 
-      // Large exploding star that covers the whole canvas
+      // Explosion effect that covers the whole canvas on blackhole death
       let largeExplodingStar = new ExplodingStar(width / 2, height / 2);
       largeExplodingStar.size = max(width, height) * 1.5;
       largeExplodingStar.lifeSpan = 10;
@@ -177,12 +175,12 @@ function draw() {
     }
   }
 
-  // Shortened interval for black hole creation
+  // Adding new blackhole after a certain amount of time
   if (frameCount % 250 === 0) {
     blackHoles.push(new BlackHole(random(width), random(height)));
   }
 
-  // Handle exploding stars for all moods
+  // Switch function for the exploding stars and comet
   switch (mood) {
     case "one-hand":
       for (let star of explodingStars) {
@@ -195,12 +193,11 @@ function draw() {
         explodingStars.push(new ExplodingStar(8, 20)); // New star every 60 frames
       }
 
-      let handPos = getHandPosition(); // Get the current hand position
-      let force = p5.Vector.sub(handPos, comet.pos); // Attraction force
-      force.setMag(0.02); // Control the strength of attraction
-      comet.applyForce(force); // Apply force to comet
-
-      comet.update(); // Change the comet's color to a warmer tone
+      let handPos = getHandPosition();
+      let force = p5.Vector.sub(handPos, comet.pos);
+      force.setMag(0.02); // Attraction force of the comet to the hand position
+      comet.applyForce(force);
+      comet.update();
       comet.display();
       break;
 
@@ -237,7 +234,6 @@ function draw() {
       // Add random movement for chaotic behavior
       let randomForce = p5.Vector.random2D().mult(0.1);
       comet.applyForce(randomForce);
-
       comet.update();
       comet.display();
 
@@ -296,7 +292,7 @@ function drawHandHints() {
       let distance = force.mag(); // Distance between boid and hand
 
       if (handOpen) {
-        let maxRepelDistance = 100; // Max distance to apply repulsion
+        let maxRepelDistance = 100; // Max distance to apply repulsion to the boids
         if (distance < maxRepelDistance) {
           force.setMag(0.1); // Strength of repulsion
           boid.applyForce(force);
@@ -319,7 +315,7 @@ function drawHandHints() {
 }
 
 function applyCreativeMovement(boid) {
-  let randomForce = p5.Vector.random2D().mult(0.05); // Small random force
+  let randomForce = p5.Vector.random2D().mult(0.05); // Small random force applied to the boids
   boid.applyForce(randomForce);
 
   if (hands.length > 0) {
@@ -352,6 +348,7 @@ function applyCreativeExplodingStar(explodingStar) {
   }
 }
 
+//Function created with the assistance of ChatGpt
 // Function to group particles into creative shapes at a random location on the canvas
 function groupParticlesInShape(shape) {
   let centerX = random(width);
